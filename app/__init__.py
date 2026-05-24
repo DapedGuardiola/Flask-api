@@ -5,8 +5,11 @@ def create_app():
     
     from app.routes.saw_routes import saw_bp
     from app.routes.cbf_routes import cbf_bp
+    from app.routes.edasRoutes import edas_bp
+
     
     app.register_blueprint(saw_bp)
     app.register_blueprint(cbf_bp)
+    app.register_blueprint(edas_bp)
     
     return app
