@@ -34,7 +34,7 @@ def similar_movies():
     )
 
     return jsonify({
-        'recommended_movies': result
+        'similar_ids': result
     })
 
 # @cbf_bp.route('/similar-movies', methods=['GET'])

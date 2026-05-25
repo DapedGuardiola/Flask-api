@@ -1,7 +1,6 @@
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
-
 def get_similar_movies(target_movie, movies):
 
     target_vector = np.array(
@@ -17,7 +16,7 @@ def get_similar_movies(target_movie, movies):
             continue
 
         movie_vector = np.array(
-            movie['movie_genre_vector']
+            movie['vector']
         ).reshape(1, -1)
 
         # HITUNG COSINE SIMILARITY
@@ -31,10 +30,10 @@ def get_similar_movies(target_movie, movies):
             continue
 
         # NORMALISASI RATING
-        normalized_rating = movie['rating'] / 10
+        normalized_rating = movie['rating']
 
         # NORMALISASI POPULARITY
-        normalized_popularity = movie['popularity'] / 1000
+        normalized_popularity = movie['popularity']
 
         # FINAL SCORE (Hybrid SAW Ranking)
         final_score = (
@@ -47,17 +46,22 @@ def get_similar_movies(target_movie, movies):
 
         recommendations.append({
             'id': movie['id'],
-            'title': movie['title'],
-            'similarity_score': round(float(similarity_score), 4),
             'final_score': round(float(final_score), 4)
         })
 
-    # SORTING BERDASARKAN FINAL SCORE
+    # SORT DESC
     recommendations = sorted(
         recommendations,
         key=lambda x: x['final_score'],
         reverse=True
     )
 
-    # AMBIL TOP 10 MOVIES
-    return recommendations[:10]
+    # TOP 10
+    top_movies = recommendations[:10]
+
+    print("Similar Movies:")
+    for movie in top_movies:
+        print(f"  - {movie['id']}: {movie['final_score']}")
+
+    # RETURN ID ONLY
+    return [movie['id'] for movie in top_movies]
