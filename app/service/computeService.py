@@ -81,12 +81,12 @@ def gaussian_score(preferred, actual, sigma):
 
 def final_score(genre_score, director_score, actor_score, era_score, rating_score, popularity_score):
     WEIGHTS = {
-            'genre'      : 0.40,
-            'director'   : 0.20,
+            'genre'      : 0.45,
+            'director'   : 0.15,
             'actor'      : 0.15,
             'era'        : 0.10,
-            'rating'     : 0.10,
-            'popularity' : 0.05,
+            'rating'     : 0.05,
+            'popularity' : 0.10,
     }
         
     return round(
@@ -103,6 +103,7 @@ def newUserRecommendation(userGenres, userTastes, movies):
     genre_weight    = defaultdict(float)
     director_weight = defaultdict(float)
     actor_weight    = defaultdict(float)
+    era_weight    = defaultdict(float)
 
     movie_genre_score      = defaultdict(float)
     movie_director_score   = defaultdict(float)
@@ -122,7 +123,7 @@ def newUserRecommendation(userGenres, userTastes, movies):
     # print(f"preferredPopularity: {preferredPopularity}")
 
     for era_key, weight in preferredEra.items():
-        genre_weight[era_key] = weight
+        era_weight[era_key] = weight
 
     for director_id, weight in preferredDirectors.items():
         director_weight[int(director_id)] = weight
@@ -132,51 +133,63 @@ def newUserRecommendation(userGenres, userTastes, movies):
 
     for ug in userGenres:
         genre_id = ug.get('genre_id')
-        genre_weight[genre_id] = ug.get('weight', 0)
+        genre_weight[int(genre_id)] = ug.get('weight', 0)
 
     # print(f"genre_weight: {dict(genre_weight)}")
     # print(f"director_weight: {dict(director_weight)}")
     # print(f"actor_weight: {dict(actor_weight)}")
+    # print(f"actor_weight: {dict(era_weight)}")
 
+    
+    
     for m in movies:
         movie_id     = m.get('movie_id')
         release_year = m.get('release_year')
         normalized   = m.get('normalizedData') or {}
         # Genre score
         movie_genres = m.get('genre_ids', [])
+        # print(f"movie genre: {movie_genres}")
+        
         if not movie_genres:
             movie_genre_score[movie_id] = 0
         else:
-            total = sum(genre_weight.get(mg, 0) for mg in movie_genres)
-            movie_genre_score[movie_id] = round(total / len(movie_genres), 2)
+            genre_total = sum(genre_weight[int(mg)] for mg in movie_genres)
+            movie_genre_score[movie_id] = round(genre_total / len(movie_genres), 2)
+        # print(f"+movie genre weight: {genre_total}")
 
         # Director score
         movie_directors = m.get('director_ids') or []
+        # print(f"movie director: {movie_directors}")
         if not movie_directors:
             movie_director_score[movie_id] = 0
         else:
-            total = sum(director_weight.get(str(d), 0) for d in movie_directors)
-            movie_director_score[movie_id] = round(total / len(movie_directors), 2)
+            director_total = sum(director_weight[d] for d in movie_directors)
+            movie_director_score[movie_id] = round(director_total / len(movie_directors), 2)
+        # print(f"+movie director weight: {director_total}")
 
         # Actor score
         movie_actors = m.get('actor_ids') or []
+        # print(f"movie actor: {movie_actors}")
         if not movie_actors:
             movie_actor_score[movie_id] = 0
         else:
-            total = sum(actor_weight.get(str(a), 0) for a in movie_actors)
-            movie_actor_score[movie_id] = round(total / len(movie_actors), 2)
+            actor_total = sum(actor_weight[a] for a in movie_actors)
+            movie_actor_score[movie_id] = round(actor_total / len(movie_actors), 2)
+        # print(f"+movie director weight: {actor_total}")
 
         # Rating & popularity score
         movie_rating_score     = gaussian_score(preferredRating, normalized.get('n_rating', 0),0.2)
         movie_popularity_score = gaussian_score(preferredPopularity, normalized.get('n_popularity', 0),0.2)
+        # print(f"+movie rating score: {movie_rating_score}")
+        # print(f"+movie popularity score: {movie_popularity_score}")
 
         # Era score
         if release_year:
             movie_era       = 'modern' if int(release_year) >= 2000 else 'classic'
-            movie_era_score = preferredEra.get(movie_era, 0)
+            movie_era_score = era_weight.get(movie_era, 0)
         else:
             movie_era_score = 0
-
+        # print(f"+movie era score: {movie_era_score}")
         # Final score
         movie_final_scores[movie_id] = final_score(
             movie_genre_score[movie_id],
@@ -186,12 +199,14 @@ def newUserRecommendation(userGenres, userTastes, movies):
             movie_rating_score,
             movie_popularity_score
         )
+        # print(f"+movie final  score: {movie_final_scores[movie_id]}")
 
     recommendation_ids = sorted(
         movie_final_scores,
         key=lambda x: movie_final_scores[x],
         reverse=True
     )[:40]
-
-    # print(f'hasil rekomendasi: {recommendation_ids}')
+    for id in recommendation_ids:
+        score = movie_final_scores[id]
+        print(f'hasil rekomendasi: {id} score : {score}')
     return recommendation_ids
