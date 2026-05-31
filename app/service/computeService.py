@@ -210,3 +210,96 @@ def newUserRecommendation(userGenres, userTastes, movies):
         score = movie_final_scores[id]
         print(f'hasil rekomendasi: {id} score : {score}')
     return recommendation_ids
+
+def exponentialMovingAverage(currentValue, array ):
+    if not array:
+        return currentValue
+    alpha = 0.3
+    avgNewValue = round(sum(array)/len(array),2)
+    value = round(((1-alpha) * currentValue) + (alpha*avgNewValue),2)
+    return value
+
+def recomputeTastes(userGenres,userTastes,userLog,movies):
+    activity_score = {
+        'click' : 0.5,
+        'watch_trailer' : 1.5,
+        'watchlist' : 0.3,
+        'favorite' : 0.4,
+        'comment' : 0.1,
+    }
+    old_weight = 0.3
+    current_genre_score = defaultdict(float)
+    movie_log_score = defaultdict(float)
+    final_actor_score = defaultdict(float)
+    final_director_score = defaultdict(float)
+    final_era_score = defaultdict(float)
+    final_genre_score = defaultdict(float)
+    new_rating_score = []
+    new_popularity_score = []
+    
+    ##userTaste
+    current_director_score   = defaultdict(float, {int(k): v *old_weight for k, v in (userTastes.get('preferred_directors') or {}).items()})
+    current_actor_score      = defaultdict(float, {int(k): v *old_weight  for k, v in (userTastes.get('preferred_actors') or {}).items()})
+    current_era_score = defaultdict(float, {
+            k: v * old_weight 
+            for k, v in (userTastes.get('preferred_era') or {}).items()
+        })
+    current_popularity_score = userTastes.get('preferred_normalized_popularity', 0)
+    current_rating_score     = userTastes.get('preferred_normalized_rating', 0)
+    
+    ##userGenre
+    for ug in userGenres:
+        genre_id = ug.get('genre_id')
+        weight = ug.get('weight')
+        current_genre_score[int(genre_id)] = weight
+    for m in movies:
+        movie_id = m.get('tmdb_movie_id')
+        movie_log_score[movie_id] = sum(
+            activity_score.get(l.get('type'), 0)
+            for l in userLog
+            if l.get('tmdb_movie_id') == movie_id
+            )
+        movie_genres = m.get('genre_ids')
+        movie_directors = m.get('director_ids')
+        movie_actors = m.get('actor_ids')
+        normalized_data = m.get('normalized_data')
+        movie_popularity = normalized_data.get('n_popularity')
+        movie_rating = normalized_data.get('n_rating')
+        movie_actors = m.get('actor_ids')
+        movie_actors = m.get('actor_ids')
+        release_year = m.get('release_year')
+        movie_era = 'modern' if release_year and int(release_year) >= 2000 else 'classic'
+        for mg in movie_genres:
+            current_genre_score[int(mg)] += movie_log_score[movie_id]
+        for md in movie_directors:
+            current_director_score[int(md)] += movie_log_score[movie_id]
+        for ma in movie_actors:
+            current_actor_score[int(ma)] += movie_log_score[movie_id]
+        current_era_score[str(movie_era)] += movie_log_score[movie_id]
+        new_popularity_score.append(movie_popularity)
+        new_rating_score.append(movie_rating)
+        
+    genre_total_score = sum(current_genre_score.values())
+    for key, val in current_genre_score.items():
+        final_genre_score[key] = round(val/genre_total_score,2)
+    actor_total_score = sum(current_actor_score.values())
+    for key, val in current_actor_score.items():
+        final_actor_score[key] = round(val/actor_total_score,2)
+    director_total_score = sum(current_director_score.values())
+    for key, val in current_director_score.items():
+        final_director_score[key] = round(val/director_total_score,2)
+    era_total_score = sum(current_era_score.values())
+    for key, val in current_era_score.items():
+        final_era_score[key] = round(val/era_total_score,2)
+    final_popularity_score = exponentialMovingAverage(current_popularity_score,new_popularity_score)
+    final_rating_score = exponentialMovingAverage(current_rating_score,new_rating_score)
+    return {
+        'preferred_genres': final_genre_score,
+        'preferred_directors': final_director_score,
+        'preferred_actors': final_actor_score,
+        'preferred_era':final_era_score,
+        'preferred_normalized_rating': final_rating_score,
+        'preferred_normalized_popularity': final_popularity_score,
+    }   
+    
+    
