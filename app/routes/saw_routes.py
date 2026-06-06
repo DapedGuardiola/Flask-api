@@ -11,13 +11,22 @@ def rank():
 
 @saw_bp.route('/discoverTest', methods=['POST'])
 def discover():
-    data = request.get_json()
-    movies = data['movies']
-    userInput = data['user_vector']
-    ranked_ids = calculate_saw_discover_test(userInput,movies)
+    try:
+        data = request.get_json()
 
-    return jsonify({'ranked_id': ranked_ids})
+        if not data or 'movie_ids' not in data or 'user_vector' not in data:
+            return jsonify({'error': 'missing fields'}), 400
 
+        movie_ids = data['movie_ids']
+        userInput = data['user_vector']
+        
+        ranked_ids = calculate_saw_discover_test(userInput, movie_ids)
+        return jsonify({'ranked_id': ranked_ids})
+    
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())  # tampil di Flask log
+        return jsonify({'error': str(e), 'ranked_id': []}), 500
 # @saw_bp.route('/discover', methods=['POST'])
 # def discover():
 #     data = request.get_json()
