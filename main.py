@@ -25,6 +25,7 @@ def warm_up_global_cache():
     try:
         if r.exists('movie_normalized_data'):
             return True
+        print("🔍 konek DB...")
         conn = mysql.connector.connect(
             host = os.getenv('DB_HOST','localhost'),
             port = int(os.getenv('DB_PORT',3306)),
@@ -32,6 +33,7 @@ def warm_up_global_cache():
             user = os.getenv('DB_USERNAME','root'),
             password = os.getenv('DB_PASSWORD',None),
         )
+        print("✅ DB konek")
         query = """
         SELECT 
             m.tmdb_movie_id, 
@@ -43,6 +45,7 @@ def warm_up_global_cache():
         JOIN normalized_movie n ON n.tmdb_movie_id = m.tmdb_movie_id 
         """
         df = pd.read_sql(query,conn)
+        print(f"✅ data: {len(df)} rows")
         conn.close()
         if df.empty:
             print("❌ db dengan vector dan normalized data kosong") 
