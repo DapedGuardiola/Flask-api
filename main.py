@@ -12,7 +12,7 @@ from app.routes.compute_routes import compute_bp
 from extension import r
 import json
 import traceback
-
+print("🚀 main.py loaded")
 app = Flask(__name__)
 app.register_blueprint(saw_bp)
 app.register_blueprint(edas_bp)
@@ -20,6 +20,7 @@ app.register_blueprint(cbf_bp)
 app.register_blueprint(compute_bp)
 
 
+print("🚀 before warm up")
 def warm_up_global_cache():
     try:
         if r.exists('movie_normalized_data'):
@@ -60,7 +61,8 @@ def warm_up_global_cache():
         print(f"❌ Gagal memuat data & konfigurasi: {str(e)}")
         traceback.print_exc()  # ← tambah ini, tampilkan detail error
         return False
-    
+
+print("🚀 after warm up")
     
     
 with app.app_context():
