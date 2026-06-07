@@ -74,9 +74,6 @@ def warm_up():
     thread.start()
     return {'status': 'ok', 'message': 'warm up started'}
     
-thread = threading.Thread(target=run_warm_up)
-thread.daemon = True
-thread.start()
 @app.route('/ping', methods=['GET'])
 def ping():
     return {'status': 'ok', 'message': 'Flask is running'}
