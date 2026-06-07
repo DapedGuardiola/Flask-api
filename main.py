@@ -68,7 +68,7 @@ def warm_up_global_cache():
         return False
 
 print("🚀 after warm up")
-    
+print(f"🚀 PORT: {os.getenv('PORT', 'NOT SET')}")
 def run_warm_up():
     with app.app_context():
         warm_up_global_cache()
