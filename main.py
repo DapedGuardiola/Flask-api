@@ -29,7 +29,7 @@ def warm_up_global_cache():
             port = int(os.getenv('DB_PORT',3306)),
             database = os.getenv('DB_DATABASE','mysql'),
             user = os.getenv('DB_USERNAME','root'),
-            password = os.getenv('DB_password',None),
+            password = os.getenv('DB_PASSWORD',None),
         )
         query = """
         SELECT 
