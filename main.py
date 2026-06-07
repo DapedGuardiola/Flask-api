@@ -67,11 +67,12 @@ def warm_up_global_cache():
         traceback.print_exc()  # ← tambah ini, tampilkan detail error
         return False
 
-print("🚀 after warm up")
-print(f"🚀 PORT: {os.getenv('PORT', 'NOT SET')}")
-def run_warm_up():
-    with app.app_context():
-        warm_up_global_cache()
+@app.route('/warm-up', methods=['POST'])
+def warm_up():
+    thread = threading.Thread(target=warm_up_global_cache)
+    thread.daemon = True
+    thread.start()
+    return {'status': 'ok', 'message': 'warm up started'}
     
 thread = threading.Thread(target=run_warm_up)
 thread.daemon = True
