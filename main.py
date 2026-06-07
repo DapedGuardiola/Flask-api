@@ -12,6 +12,8 @@ from app.routes.compute_routes import compute_bp
 from extension import r
 import json
 import traceback
+import threading
+
 print("🚀 main.py loaded")
 app = Flask(__name__)
 app.register_blueprint(saw_bp)
@@ -20,9 +22,9 @@ app.register_blueprint(cbf_bp)
 app.register_blueprint(compute_bp)
 
 
-print("🚀 before warm up")
 def warm_up_global_cache():
     try:
+        print("🔥 masuk warm_up", flush=True)
         if r.exists('movie_normalized_data'):
             return True
         print("🔍 konek DB...")
@@ -67,10 +69,13 @@ def warm_up_global_cache():
 
 print("🚀 after warm up")
     
+def run_warm_up():
+    with app.app_context():
+        warm_up_global_cache()
     
-with app.app_context():
-    warm_up_global_cache()
-
+thread = threading.Thread(target=run_warm_up)
+thread.daemon = True
+thread.start()
 @app.route('/ping', methods=['GET'])
 def ping():
     return {'status': 'ok', 'message': 'Flask is running'}
