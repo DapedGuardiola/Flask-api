@@ -83,9 +83,9 @@ def calculate_saw_discover_test(user_input, movie_ids):
     with open(file_path, "r", encoding="utf-8") as file:
         matrix = json.load(file)
 
-    discover_cache = r.get('movie_discover_data')
+    discover_cache = r.get('movie_normalized_data')
     if not discover_cache:
-        logging.error("Redis key 'movie_discover_data' tidak ditemukan")
+        logging.error("Redis key 'movie_normalized_data' tidak ditemukan")
         return []
 
     try:

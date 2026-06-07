@@ -11,6 +11,7 @@ from app.routes.cbf_routes import cbf_bp
 from app.routes.compute_routes import compute_bp
 from extension import r
 import json
+import traceback
 
 app = Flask(__name__)
 app.register_blueprint(saw_bp)
@@ -21,7 +22,7 @@ app.register_blueprint(compute_bp)
 
 def warm_up_global_cache():
     try:
-        if r.exists('movie_discover_data'):
+        if r.exists('movie_normalized_data'):
             return True
         conn = mysql.connector.connect(
             host = os.getenv('DB_HOST','localhost'),
@@ -47,11 +48,20 @@ def warm_up_global_cache():
             return False
         df['vector'] = df['vector'].apply(json.loads)
         df_json = df.to_json(orient='split')
-        r.set('movie_discover_data',df_json)
+        r.set('movie_normalized_data',df_json)
+        
+        from app.service.similar_movie_service import get_all_similar_movies
+        all_similar = get_all_similar_movies()
+        if all_similar:
+            print("data cache berhasil disimpan")
+        
         return True
     except Exception as e:
         print(f"❌ Gagal memuat data & konfigurasi: {str(e)}")
+        traceback.print_exc()  # ← tambah ini, tampilkan detail error
         return False
+    
+    
     
 with app.app_context():
     warm_up_global_cache()
