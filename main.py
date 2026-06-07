@@ -12,8 +12,6 @@ from app.routes.compute_routes import compute_bp
 from extension import r
 import json
 import traceback
-import threading
-
 print("🚀 main.py loaded")
 app = Flask(__name__)
 app.register_blueprint(saw_bp)
@@ -67,13 +65,12 @@ def warm_up_global_cache():
         traceback.print_exc()  # ← tambah ini, tampilkan detail error
         return False
 
-@app.route('/warm-up', methods=['POST'])
-def warm_up():
-    thread = threading.Thread(target=warm_up_global_cache)
-    thread.daemon = True
-    thread.start()
-    return {'status': 'ok', 'message': 'warm up started'}
+print("🚀 after warm up")
     
+    
+with app.app_context():
+    warm_up_global_cache()
+
 @app.route('/ping', methods=['GET'])
 def ping():
     return {'status': 'ok', 'message': 'Flask is running'}
