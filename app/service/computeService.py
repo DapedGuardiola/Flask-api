@@ -214,20 +214,20 @@ def newUserRecommendation(userGenres, userTastes, movies):
 def exponentialMovingAverage(currentValue, array ):
     if not array:
         return currentValue
-    alpha = 0.3
+    alpha = 0.1
     avgNewValue = round(sum(array)/len(array),2)
     value = round(((1-alpha) * currentValue) + (alpha*avgNewValue),2)
     return value
 
 def recomputeTastes(userGenres,userTastes,userLog,movies):
     activity_score = {
-        'click' : 0.5,
-        'watch_trailer' : 1.5,
+        'click' : 0.1,
+        'watch_trailer' : 0.15,
         'watchlist' : 0.3,
         'favorite' : 0.4,
-        'comment' : 0.1,
+        'comment' : 0.15,
     }
-    old_weight = 0.3
+    old_weight = 0.6
     current_genre_score = defaultdict(float)
     movie_log_score = defaultdict(float)
     final_actor_score = defaultdict(float)
@@ -300,6 +300,54 @@ def recomputeTastes(userGenres,userTastes,userLog,movies):
         'preferred_era':final_era_score,
         'preferred_normalized_rating': final_rating_score,
         'preferred_normalized_popularity': final_popularity_score,
-    }   
-    
-    
+    }
+
+
+def calculate_intersect_genres(movies_data):
+    """
+    Menghitung film mana saja yang memiliki irisan genre kuat (outlier diabaikan).
+    Sesuai PM Request: Cek pairwise (satu per satu), jika kedua film (2-2nya) memiliki 
+    irisan genre > 0.5 (50%), maka ID film tersebut dikumpulkan.
+    """
+    if not movies_data:
+        return []
+
+    # Jika user cuma ngirim 1 film, langsung return id-nya
+    if len(movies_data) == 1:
+        first = movies_data[0]
+        mid = first.get('id') or first.get('movie_id') or first.get('tmdb_movie_id')
+        return [mid] if mid else [] # <-- Ubah jadi array id saja
+
+    valid_movie_ids = set()
+    valid_genres = set()
+
+    # Logika "Satu film diambil satu film" (Pairwise Comparison)
+    for i in range(len(movies_data)):
+        movie_a = movies_data[i]
+        genres_a = set(movie_a.get('genre_ids') or [])
+        mid_a = movie_a.get('id') or movie_a.get('movie_id') or movie_a.get('tmdb_movie_id')
+
+        for j in range(i + 1, len(movies_data)):
+            movie_b = movies_data[j]
+            genres_b = set(movie_b.get('genre_ids') or [])
+            mid_b = movie_b.get('id') or movie_b.get('movie_id') or movie_b.get('tmdb_movie_id')
+
+            if not genres_a or not genres_b:
+                continue
+
+            intersection = genres_a.intersection(genres_b)
+
+            # Menghitung porsi irisan masing-masing 
+            sim_a = len(intersection) / len(genres_a)
+            sim_b = len(intersection) / len(genres_b)
+
+            # "kalo semisal 2 2 nya lebih dari 0.5, dicocokkan semua / diambil"
+            if sim_a >= 0.5 and sim_b >= 0.5:
+                if mid_a: valid_movie_ids.add(mid_a)
+                if mid_b: valid_movie_ids.add(mid_b)
+                valid_genres.update(intersection)
+
+    # Antisipasi kalau ternyata filmnya beda semua (outlier semua tidak ada yg nyambung)
+    if not valid_movie_ids:
+       return []
+    return list(valid_movie_ids)
