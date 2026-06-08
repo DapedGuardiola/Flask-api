@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.service.computeService import newUserTastes,newUserRecommendation, recomputeTastes
+from app.service.computeService import newUserTastes,newUserRecommendation, recomputeTastes, calculate_intersect_genres
 
 compute_bp = Blueprint('compute', __name__, url_prefix='/compute')
 
@@ -37,4 +37,23 @@ def computeNewRecommendation():
 
     return jsonify({
         'recommendation_ids': recommendation_ids
+    })
+
+
+@compute_bp.route('/intersect-genres', methods=['POST'])
+def computeIntersectGenres():
+    data = request.get_json()
+    
+    if not data or 'movies' not in data:
+        return jsonify({'error': 'The movies field is required'}), 400
+        
+    movies_data = data.get('movies', [])
+    
+    # Sekarang result isinya langsung array ID film, misal: [12, 45, 89]
+    result_movie_ids = calculate_intersect_genres(movies_data)
+
+    return jsonify({
+        'status': 'success',
+        'valid_movie_ids': result_movie_ids,
+        'count': len(result_movie_ids)
     })
