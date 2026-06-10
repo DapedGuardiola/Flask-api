@@ -222,10 +222,10 @@ def exponentialMovingAverage(currentValue, array ):
 def recomputeTastes(userGenres,userTastes,userLog,movies):
     activity_score = {
         'click' : 0.1,
-        'watch_trailer' : 0.15,
-        'watchlist' : 0.3,
-        'favorite' : 0.4,
-        'comment' : 0.15,
+        'watch_trailer' : 0.2,
+        'watchlist' : 0.25,
+        'favorite' : 0.35,
+        'search' : 0.1,
     }
     old_weight = 0.6
     current_genre_score = defaultdict(float)
